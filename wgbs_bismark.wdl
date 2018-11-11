@@ -54,11 +54,18 @@ workflow WGBS {
                 debismark = debismark
     }
 
+        call Sort_Bam {
+            input:
+                file = Deduplicate.outputFile,
+                sambamba = sambamba,
+                cpu = cpu
+    }
+
         call PileOMeth_extract {
             input:
                 PileOMeth = PileOMeth,
                 genomeFile = genomeFile,
-                file = Deduplicate.outputFile
+                file = Sort_Bam.outputFile
     }
 }
 
@@ -132,13 +139,26 @@ task Deduplicate {
     File file
 
     command {
-      mv ${file} .
-      ${debismark} ${basename(file)} --paired --bam
+      ${debismark} ${file} --paired --bam
   }
 
   output {
     File outputFile = sub(basename(file), ".bam$", ".deduplicated.bam")
     File reportFile = sub(basename(file), ".bam$", ".deduplication_report.txt")
+  }
+}
+
+task Sort_Bam {
+    File sambamba
+    File file
+    Int cpu
+
+    command {
+      ${sambamba} sort -t ${cpu} ${file}
+  }
+
+  output {
+    File outputFile = sub(basename(file), ".bam$", ".sorted.bam")
   }
 }
 
@@ -152,6 +172,6 @@ task PileOMeth_extract {
         }
 
   output {
-      File outputFile = sub(basename(file), ".bam$", ".CpG.bedGraph.gz")
+      File outputFile = sub(basename(file), ".sorted.bam$", ".CpG.bedGraph.gz")
   }
 }
