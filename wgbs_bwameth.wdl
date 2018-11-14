@@ -58,7 +58,7 @@ workflow WGBS {
 
         call Deduplicate {
             input:
-                file = BismarkPaired.outputFile,
+                file = BwaPaired.outputFile,
                 debismark = debismark
     }
 
@@ -82,7 +82,6 @@ workflow WGBS {
 
         # Report files
         Array[Pair[File, File]] trimReportFiles = TrimGalorePaired.statsFiles
-        Array[File] alignReportFile = BismarkPaired.reportFile
         Array[File] deduplicatedReportFiles = Deduplicate.reportFile
     }
 }
@@ -107,7 +106,7 @@ task FastqcPaired {
               basename(pairedFiles.left) + ".html",
               basename(pairedFiles.right) + ".html")
       }
-
+}
 
 # Trim reads using AdapterRemoval
 task TrimGalorePaired {
@@ -149,7 +148,7 @@ task BwaPaired {
   command {
       ${bwa} --threads ${cpu} --reference ${bwaindex} ⁠\
         ${pairedFiles.left} ${pairedFiles.right} | ⁠\
-            ${samtools} sort -@ ${Threads} -o "${basename(pairedFiles.left)}_bwameth.bam"
+            ${samtools} sort -@ ${cpu} -o "${basename(pairedFiles.left)}_bwameth.bam"
   }
 
   output {
